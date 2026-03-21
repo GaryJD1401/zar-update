@@ -16,7 +16,6 @@
 body{background:var(--dark);color:var(--txt);font-family:'DM Sans',sans-serif;min-height:100vh;overscroll-behavior:none;background-image:radial-gradient(ellipse 60% 40% at 15% 10%,rgba(201,168,76,.07) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 85% 90%,rgba(201,168,76,.05) 0%,transparent 60%)}
 .scr{display:none;flex-direction:column;align-items:center;padding:calc(var(--st)+20px) 14px calc(var(--sb)+40px);min-height:100vh}
 .scr.on{display:flex}
-/* SPLASH */
 #spl{position:fixed;inset:0;z-index:999;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .5s,visibility .5s}
 #spl.gone{opacity:0;visibility:hidden;pointer-events:none}
 .si{width:92px;height:92px;border-radius:20px;background:linear-gradient(145deg,#1C2030,#0D0F14);border:1px solid rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;font-size:2.9rem;box-shadow:0 8px 40px rgba(201,168,76,.16)}
@@ -90,7 +89,6 @@ h1{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:900;backgr
 .at{display:flex;align-items:center;justify-content:center;padding:9px;border-top:1px solid var(--bdr);font-size:.59rem;color:var(--muted)}
 .ft{margin-top:16px;text-align:center;font-size:.64rem;color:var(--muted);line-height:1.9}
 .ft a{color:var(--gold);text-decoration:none}
-/* INDICATION CARDS */
 .rg{padding:13px 15px;display:flex;flex-direction:column;gap:9px}
 .rc2{background:var(--d3);border:1px solid var(--bdr);border-radius:12px;padding:12px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .rcl{display:flex;align-items:center;gap:11px}
@@ -142,7 +140,7 @@ h1{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:900;backgr
   <div class="card">
     <div class="tp">
       <div><div class="ck" id="mck">—</div><div class="sr"><span class="dot" id="mdt"></span><span class="sm" id="mst">Ready</span></div><div class="nxt" id="mnx"></div></div>
-      <span class="pl">ECB · gold-api.com · Coinbase</span>
+      <span class="pl">Live · ExchangeRate-API</span>
     </div>
     <div class="br">
       <button class="fb" id="mfb" onclick="mGo()"><span id="mfi">⟳</span><span id="mfl">Fetch Live Rates &amp; Generate Update</span></button>
@@ -172,7 +170,7 @@ h1{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:900;backgr
       <button class="cp" id="mcp" onclick="mCopy()"><span>📋</span><span id="mcpt">Copy Full Update to Clipboard</span></button>
       <div class="shr"><button class="wa" onclick="mWA()">💬 WhatsApp</button><button class="li" onclick="mLI()">💼 LinkedIn</button></div>
     </div>
-    <div class="at">FX: frankfurter.dev (ECB) · Gold: gold-api.com · BTC: Coinbase/Kraken</div>
+    <div class="at">FX: exchangerate-api.com · Gold: gold-api.com · BTC: Coinbase</div>
   </div>
   <div class="ft"><a href="mailto:Gary.davies@sableinternational.com">Gary.davies@sableinternational.com</a><br>Global mobility solutions for international citizens</div>
 </div>
@@ -204,13 +202,19 @@ h1{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:900;backgr
       <button class="cp" id="qcp" onclick="qCopy()"><span>📋</span><span id="qcpt">Copy to Clipboard</span></button>
       <div class="shr"><button class="wa" onclick="qWA()">💬 Open WhatsApp</button></div>
     </div>
-    <div class="at">FX: frankfurter.dev (ECB) — No API key required</div>
+    <div class="at">FX: exchangerate-api.com · No key shown to users</div>
   </div>
   <div class="ft"><a href="mailto:Gary.davies@sableinternational.com">Gary.davies@sableinternational.com</a><br>Global mobility solutions for international citizens</div>
 </div>
 
 <script>
 'use strict';
+
+/* ── API KEY ────────────────────────────────────────────────────────────── */
+var ERKEY = 'ae73425c2d791023f70de300';
+/* ExchangeRate-API v6: returns { conversion_rates: { ZAR:16.77, GBP:0.77, ... } }
+   All rates are vs 1 USD base. Updates every ~hour for free plan. */
+var FX_URL = 'https://v6.exchangerate-api.com/v6/' + ERKEY + '/latest/USD';
 
 /* ── Navigation ─────────────────────────────────────────────────────────── */
 function nav(id){
@@ -219,7 +223,7 @@ function nav(id){
   window.scrollTo(0,0);
 }
 
-/* ── Fetch (no AbortController — Samsung safe) ──────────────────────────── */
+/* ── Fetch ──────────────────────────────────────────────────────────────── */
 function pf(url){
   var t=new Promise(function(_,rej){setTimeout(function(){rej(new Error('Timeout'));},14000);});
   return Promise.race([
@@ -232,7 +236,7 @@ function pf(url){
 }
 
 /* ── Copy ───────────────────────────────────────────────────────────────── */
-function cp(txt,btn,lbl,orig){
+function doCp(txt,btn,lbl,orig){
   function ok(){lbl.textContent='✓  Copied!';btn.classList.add('ok');setTimeout(function(){lbl.textContent=orig;btn.classList.remove('ok');},4000);}
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok).catch(function(){fb(txt);ok();});}else{fb(txt);ok();}
 }
@@ -252,22 +256,6 @@ function tick(){
 }
 tick();setInterval(tick,1000);
 
-/* ══════════════════════════════════════════════════════════════════════════
-   CONFIRMED WORKING API SOURCES (all tested live):
-
-   FX:  https://api.frankfurter.dev/v1/latest?base=USD&symbols=ZAR,GBP,EUR,AUD,NZD,CAD,ILS
-        Returns { rates: { ZAR:17.07, GBP:0.75, EUR:0.87, ... } }
-        ZAR=17.07 confirmed live ✅  AED not included — calculated via peg
-
-   BTC: https://api.coinbase.com/v2/prices/BTC-USD/spot
-        Returns { data: { amount: "84000" } }
-        Fallback: https://api.kraken.com/0/public/Ticker?pair=XBTUSD
-
-   XAU: https://api.gold-api.com/price/XAU
-        Returns { price: 3025.5, ... }   (no auth required ✅)
-        Live gold price, no key needed
-══════════════════════════════════════════════════════════════════════════ */
-
 /* ════ MORNING RATES ════════════════════════════════════════════════════ */
 function mDot(c,m){document.getElementById('mdt').className='dot'+(c?' '+c:'');document.getElementById('mst').textContent=m;}
 function mv(id,v){document.getElementById('mv-'+id).textContent=v;}
@@ -283,20 +271,21 @@ function mGo(){
   var btn=document.getElementById('mfb'),ld=document.getElementById('mld'),eb=document.getElementById('meb'),ow=document.getElementById('mow');
   btn.disabled=true;document.getElementById('mfi').textContent='↻';document.getElementById('mfl').textContent='Fetching…';
   ld.style.display='block';eb.style.display='none';ow.style.display='none';
-  mDot('bz','Fetching rates…');
+  mDot('bz','Fetching live rates…');
   ['usd','gbp','eur','aud','nzd','cad','aed','ils','btc','xau','ug'].forEach(function(k){mv(k,'…');});
-  document.getElementById('mlm').textContent='Fetching ECB exchange rates…';
+  document.getElementById('mlm').textContent='Fetching live FX rates…';
 
-  /* Step 1: FX rates */
-  pf('https://api.frankfurter.dev/v1/latest?base=USD&symbols=ZAR,GBP,EUR,AUD,NZD,CAD,ILS')
+  pf(FX_URL)
   .then(function(d){
-    var R=d.rates;
-    if(!R||!R.ZAR) throw new Error('ZAR rate not received — please check your connection and retry.');
+    /* ExchangeRate-API v6 response:
+       { result:"success", conversion_rates:{ ZAR:16.77, GBP:0.77, EUR:0.91, AED:3.67, ILS:3.13, ... } } */
+    var R = d.conversion_rates;
+    if(!R || !R.ZAR) throw new Error('Rate data not received. Check your connection and retry.');
 
+    /* All rates = how many X per 1 USD */
     var usd=R.ZAR, gbp=R.ZAR/R.GBP, eur=R.ZAR/R.EUR, aud=R.ZAR/R.AUD;
-    var nzd=R.ZAR/R.NZD, cad=R.ZAR/R.CAD, ils=R.ZAR/R.ILS;
-    var aed=R.ZAR/3.6725; /* AED pegged to USD at 3.6725 — official peg */
-    var ug=R.GBP;
+    var nzd=R.ZAR/R.NZD, cad=R.ZAR/R.CAD, aed=R.ZAR/R.AED, ils=R.ZAR/R.ILS;
+    var ug=R.GBP; /* GBP per 1 USD */
 
     mv('usd','R '+usd.toFixed(2)); mv('gbp','R '+gbp.toFixed(2)); mv('eur','R '+eur.toFixed(2));
     mv('aud','R '+aud.toFixed(2)); mv('nzd','R '+nzd.toFixed(2)); mv('cad','R '+cad.toFixed(2));
@@ -304,31 +293,27 @@ function mGo(){
 
     document.getElementById('mlm').textContent='Fetching Gold price…';
 
-    /* Step 2: Gold via gold-api.com (free, no key, CORS open) */
-    var xauP=pf('https://api.gold-api.com/price/XAU')
-      .then(function(g){
-        /* Response: { symbol:"XAU", price:3025.5, ... } */
-        var p=parseFloat(g.price||g.Price||g.ask||0);
-        return p>0?Math.round(p):null;
-      })
-      .catch(function(){return null;});
+    /* Gold via gold-api.com — free, no key, live */
+    var xauP = pf('https://api.gold-api.com/price/XAU')
+      .then(function(g){ var p=parseFloat(g.price||0); return p>0?Math.round(p):null; })
+      .catch(function(){ return null; });
 
-    /* Step 3: Bitcoin via Coinbase → Kraken fallback */
+    /* BTC via Coinbase → Kraken fallback */
     document.getElementById('mlm').textContent='Fetching Bitcoin price…';
-    var btcP=pf('https://api.coinbase.com/v2/prices/BTC-USD/spot')
-      .then(function(j){return Math.round(parseFloat(j.data.amount));})
+    var btcP = pf('https://api.coinbase.com/v2/prices/BTC-USD/spot')
+      .then(function(j){ return Math.round(parseFloat(j.data.amount)); })
       .catch(function(){
         return pf('https://api.kraken.com/0/public/Ticker?pair=XBTUSD')
-          .then(function(j){return Math.round(parseFloat(j.result.XXBTZUSD.c[0]));});
+          .then(function(j){ return Math.round(parseFloat(j.result.XXBTZUSD.c[0])); });
       });
 
     return Promise.all([xauP, btcP.catch(function(){return null;})])
     .then(function(res){
       var xauUSD=res[0], btcUSD=res[1];
-      mv('xau', xauUSD?'$'+xauUSD.toLocaleString():'N/A');
-      mv('btc', btcUSD?'$'+btcUSD.toLocaleString():'N/A');
+      mv('xau', xauUSD ? '$'+xauUSD.toLocaleString() : 'N/A');
+      mv('btc', btcUSD ? '$'+btcUSD.toLocaleString() : 'N/A');
 
-      document.getElementById('mot').textContent=
+      document.getElementById('mot').textContent =
         DS+'\n\nAt 08h00 (CAT)\n\nThe 🇿🇦#ZAR midrate opened at :\n'
         +'\nR'+usd.toFixed(2)+' / USD 🇺🇸$'
         +'\nR'+gbp.toFixed(2)+' / GBP 🇬🇧£'
@@ -345,26 +330,26 @@ function mGo(){
         +'\n\nemail: Gary.davies@sableinternational.com'
         +'\n\nGlobal mobility solutions for international citizens';
 
-      ld.style.display='none';ow.style.display='block';
+      ld.style.display='none'; ow.style.display='block';
       var t=new Date().toLocaleTimeString('en-ZA',{timeZone:'Africa/Johannesburg',hour:'2-digit',minute:'2-digit',hour12:false});
       mDot('lv','Live · updated '+t+' CAT');
-      if(mAT)mCD();
+      if(mAT) mCD();
     });
   })
   .catch(function(err){
-    ld.style.display='none';eb.style.display='block';
+    ld.style.display='none'; eb.style.display='block';
     eb.innerHTML='<strong>⚠ '+err.message+'</strong><br><br><small style="opacity:.75">• Check WiFi / mobile data is on<br>• Disable VPN if active<br>• Tap Fetch to retry</small>';
     mDot('er','Failed — tap Fetch to retry');
   })
   .finally(function(){btn.disabled=false;document.getElementById('mfi').textContent='⟳';document.getElementById('mfl').textContent='Refresh Rates';});
 }
 
-function mCopy(){cp(document.getElementById('mot').textContent,document.getElementById('mcp'),document.getElementById('mcpt'),'Copy Full Update to Clipboard');}
+function mCopy(){doCp(document.getElementById('mot').textContent,document.getElementById('mcp'),document.getElementById('mcpt'),'Copy Full Update to Clipboard');}
 function mWA(){window.open('https://wa.me/?text='+encodeURIComponent(document.getElementById('mot').textContent),'_blank');}
 function mLI(){window.open('https://www.linkedin.com/sharing/share-offsite/?url=https://sableinternational.com&summary='+encodeURIComponent(document.getElementById('mot').textContent.substring(0,700)),'_blank');}
 
 /* ════ INDICATION RATES ════════════════════════════════════════════════ */
-var FL=0.05,PC=0.01;
+var FL=0.05, PC=0.01;
 function ind(m){return m+FL+(m*PC);}
 function qDot(c,m){document.getElementById('qdt').className='dot'+(c?' '+c:'');document.getElementById('qst').textContent=m;}
 function qCard(mid,indEl,midEl){midEl.textContent='R'+mid.toFixed(2);indEl.textContent='R'+ind(mid).toFixed(2);}
@@ -382,18 +367,17 @@ function qGo(){
   ld.style.display='block';eb.style.display='none';ow.style.display='none';
   qDot('bz','Fetching midrates…');
   ['qmu','qiu','qme','qie','qmg','qig','qma','qia'].forEach(function(k){document.getElementById(k).textContent='…';});
-  document.getElementById('qlm').textContent='Fetching ECB rates…';
+  document.getElementById('qlm').textContent='Fetching live rates…';
 
-  pf('https://api.frankfurter.dev/v1/latest?base=USD&symbols=ZAR,GBP,EUR,AUD')
+  pf(FX_URL)
   .then(function(d){
-    var R=d.rates;
-    if(!R||!R.ZAR) throw new Error('ZAR rate not received — please check your connection and retry.');
-
+    var R=d.conversion_rates;
+    if(!R||!R.ZAR) throw new Error('Rate data not received. Check your connection and retry.');
     var mU=R.ZAR, mE=R.ZAR/R.EUR, mG=R.ZAR/R.GBP, mA=R.ZAR/R.AUD;
-    qCard(mU, document.getElementById('qiu'), document.getElementById('qmu'));
-    qCard(mE, document.getElementById('qie'), document.getElementById('qme'));
-    qCard(mG, document.getElementById('qig'), document.getElementById('qmg'));
-    qCard(mA, document.getElementById('qia'), document.getElementById('qma'));
+    qCard(mU,document.getElementById('qiu'),document.getElementById('qmu'));
+    qCard(mE,document.getElementById('qie'),document.getElementById('qme'));
+    qCard(mG,document.getElementById('qig'),document.getElementById('qmg'));
+    qCard(mA,document.getElementById('qia'),document.getElementById('qma'));
 
     document.getElementById('qot').textContent=
       '*SABLE International Forex*\n'
@@ -408,20 +392,20 @@ function qGo(){
       +'\n\nemail: Gary.davies@sableinternational.com'
       +'\n\nGlobal mobility solutions for international citizens';
 
-    ld.style.display='none';ow.style.display='block';
+    ld.style.display='none'; ow.style.display='block';
     var t=new Date().toLocaleTimeString('en-ZA',{timeZone:'Africa/Johannesburg',hour:'2-digit',minute:'2-digit',hour12:false});
     qDot('lv','Live · updated '+t+' CAT');
-    if(qAT)qCD();
+    if(qAT) qCD();
   })
   .catch(function(err){
-    ld.style.display='none';eb.style.display='block';
+    ld.style.display='none'; eb.style.display='block';
     eb.innerHTML='<strong>⚠ '+err.message+'</strong><br><br><small style="opacity:.75">• Check WiFi / mobile data is on<br>• Disable VPN if active<br>• Tap Fetch to retry</small>';
     qDot('er','Failed — tap Fetch to retry');
   })
   .finally(function(){btn.disabled=false;document.getElementById('qfi').textContent='⟳';document.getElementById('qfl').textContent='Fetch Live Rates';});
 }
 
-function qCopy(){cp(document.getElementById('qot').textContent,document.getElementById('qcp'),document.getElementById('qcpt'),'Copy to Clipboard');}
+function qCopy(){doCp(document.getElementById('qot').textContent,document.getElementById('qcp'),document.getElementById('qcpt'),'Copy to Clipboard');}
 function qWA(){window.open('https://wa.me/?text='+encodeURIComponent(document.getElementById('qot').textContent),'_blank');}
 
 setTimeout(function(){document.getElementById('spl').classList.add('gone');},1600);
